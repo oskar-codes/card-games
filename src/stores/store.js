@@ -1,43 +1,16 @@
-import { defineStore } from 'pinia';
-import { Game } from './Game';
+import { Game } from '@/assets/js/game/Game'
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
-export const useGameStore = defineStore('game', {
-  state: () => ({
-    game: null,
-  }),
+export const useStore = defineStore('store', () => {
+  const game = ref(null)
 
-  actions: {
-    /**
-     * Initialize the game with player names.
-     * @param {string[]} playerNames
-     */
-    initializeGame(playerNames) {
-      this.game = new Game(undefined, playerNames);
-    },
+  const createGame = async () => {
+    game.value = await Game.createGame();
+  }
 
-    /**
-     * Play cards for the current player.
-     * @param {Card[]} cards
-     */
-    playCards(cards) {
-      const currentPlayer = this.game.players[this.game.currentPlayerIndex];
-      currentPlayer.playCards(cards);
-
-      // Check for round end
-      if (currentPlayer.hand.length === 0) {
-        console.log(`${currentPlayer.name} finished their cards!`);
-      }
-
-      this.game.nextTurn();
-    },
-  },
-
-  getters: {
-    /**
-     * Get the current player.
-     */
-    currentPlayer(state) {
-      return state.game.players[state.game.currentPlayerIndex];
-    },
-  },
-});
+  return {
+    game,
+    createGame
+  }
+})
