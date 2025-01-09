@@ -1,43 +1,42 @@
 import { defineStore } from 'pinia';
 import { Game } from './Game';
 
-export const useGameStore = defineStore('game', {
-  state: () => ({
-    game: null,
-  }),
+export const useGameStore = defineStore('game', function() {
+  const game = ref(null);
 
-  actions: {
-    /**
-     * Initialize the game with player names.
-     * @param {string[]} playerNames
-     */
-    initializeGame(playerNames) {
-      this.game = new Game(undefined, playerNames);
-    },
+  /**
+   * Initialize the game with player names.
+   * @param {string[]} playerNames
+   */
+  const initializeGame = async (playerNames) => {
+    // game.value = new Game(undefined, playerNames);
+    game.value = await Game.createGame();
+  }
 
-    /**
-     * Play cards for the current player.
-     * @param {Card[]} cards
-     */
-    playCards(cards) {
-      const currentPlayer = this.game.players[this.game.currentPlayerIndex];
-      currentPlayer.playCards(cards);
+  /**
+   * Play cards for the current player.
+   * @param {Card[]} cards
+   */
+  const playCards = (cards) => {
+    const currentPlayer = game.value.players[game.value.currentPlayerIndex];
+    currentPlayer.playCards(cards);
 
-      // Check for round end
-      if (currentPlayer.hand.length === 0) {
-        console.log(`${currentPlayer.name} finished their cards!`);
-      }
+    // Check for round end
+    if (currentPlayer.hand.length === 0) {
+      console.log(`${currentPlayer.name} finished their cards!`);
+    }
 
-      this.game.nextTurn();
-    },
-  },
+    game.value.nextTurn();
+  }
 
-  getters: {
-    /**
-     * Get the current player.
-     */
-    currentPlayer(state) {
-      return state.game.players[state.game.currentPlayerIndex];
-    },
-  },
+  const currentPlayer = computed(() => {
+    return game.value.players[game.value.currentPlayerIndex];
+  });
+
+  return {
+    game,
+    initializeGame,
+    playCards,
+    currentPlayer,
+  };
 });
