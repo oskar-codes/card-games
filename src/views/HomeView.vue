@@ -11,9 +11,10 @@ import { useStore } from '@/stores/store';
 
 export default {
   methods: {
-    createGame() {
+    async createGame() {
       const store = useStore();
-      store.createGame();
+      await store.createGame();
+      this.$router.push(`/lobby/:${store.game.id}`);
     }
   }
 }
