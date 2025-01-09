@@ -8,10 +8,12 @@ export class Player {
 
   /**
    * @param {String} name
+   * @param {String} id
    * @param {Card[]} hand
    */
-  constructor(name, hand = []) {
+  constructor(name, id, hand = []) {
     this.name = name;
+    this.id = id;
     this.hand = hand;
   }
 
