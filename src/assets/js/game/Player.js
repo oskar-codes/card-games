@@ -12,11 +12,13 @@ export class Player {
   /**
    * @param {String} id
    * @param {String} name
+   * @param {String} id
    * @param {Card[]} hand
    */
   constructor(id = uuidv4(), name, hand = []) {
     this.id = id;
     this.name = name;
+    this.id = id;
     this.hand = hand;
   }
 
