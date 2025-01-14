@@ -33,4 +33,8 @@ export class Card {
       rank: this.rank
     }
   }
+
+  static hydrate(data) {
+    return new Card(data.suit, data.rank);
+  }
 }

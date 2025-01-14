@@ -21,4 +21,8 @@ export class Player {
       hand: this.hand.map(card => card.serialized())
     }
   }
+
+  static hydrate(data) {
+    return new Player(data.id, data.name, data.hand.map(card => Card.hydrate(card)));
+  }
 }

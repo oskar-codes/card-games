@@ -32,6 +32,14 @@ export class Game {
     }
   }
 
+  static hydrate(data) {
+    const game = new Game(data.id, data.players.map(player => Player.hydrate(player)));
+    game.currentPlayerIndex = data.currentPlayerIndex;
+    game.currentCard = data.currentCard ? Card.hydrate(data.currentCard) : null;
+
+    return game;
+  }
+
   async updateGameOnFirestore() {
     await setDoc(doc(db, 'games', this.id), this.serialized());
   }
