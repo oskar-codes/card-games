@@ -1,6 +1,7 @@
 import { db } from '../firebase';
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { Player } from './Player';
 
 /**
  * @class Game
@@ -15,10 +16,10 @@ export class Game {
   /**
    * @param {String} id
    */
-  constructor(id) {
+  constructor(id, players = []) {
     this.id = id;
 
-    this.players = [];
+    this.players = players;
     this.currentPlayerIndex = 0;
     this.currentCard = null;
   }
@@ -45,12 +46,25 @@ export class Game {
   }
 
 
-  static async createGame() {
+  static async createGame(host) {
+    console.log(host);
     const id = uuidv4();
-    const game = new Game(id);
+    const game = new Game(id, host ? [host] : []);
     await setDoc(doc(db, 'games', id), game.serialized());
 
     return game;
+  }
+
+  static async loadGame(id) {
+    const docRef = doc(db, 'games', id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return Game.hydrate(data);
+    }
+
+    return null;
   }
 
 }
