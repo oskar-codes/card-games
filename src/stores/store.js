@@ -21,13 +21,13 @@ export const useStore = defineStore('store', () => {
     game.value = await Game.createGame(player.value);
   }
 
-  const loadGame = async (id) => {
-    game.value = await Game.loadGame(id);
+  const joinGame = async (id) => {
+    game.value = await Game.joinGame(id, player.value);
   }
 
   return {
     game,
     createGame,
-    loadGame
+    joinGame
   }
 })
