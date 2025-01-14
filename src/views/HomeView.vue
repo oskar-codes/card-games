@@ -3,7 +3,7 @@
     <div class="screen main">
       <div class="play-container">
         <header>President Online</header>
-        <button class="play-button">Play</button>
+        <button class="play-button" @click="createGame">Play</button>
         <div class="cards-container" @mousemove="handleMouseMove">
           <img
               v-for="(card, index) in cards"
@@ -24,6 +24,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
+import { useStore } from '@/stores/store';
 
 export default {
   setup() {
@@ -96,9 +97,17 @@ export default {
       getCardImage,
       handleMouseMove,
       handleCardHover,
-      handleCardLeave,
+      handleCardLeave
     };
   },
+  methods: {
+    async createGame() {
+      console.log('Creating game...');
+      const store = useStore();
+      await store.createGame();
+      this.$router.push(`/lobby/${store.game.id}`);
+    }
+  }
 };
 </script>
 
@@ -163,11 +172,11 @@ header {
   cursor: pointer;
   z-index: 10;
   box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+  transition: all 0.3s ease;
 }
 
 .play-button:hover {
   transform: translate(-50%, -50%) scale(1.1);
-  transition: all 0.3s ease;
 }
 
 /* Card container styling */
