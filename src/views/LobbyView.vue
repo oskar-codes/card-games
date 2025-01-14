@@ -20,7 +20,7 @@ export default {
     const route = useRoute();
     const gameId = route.params.id;
 
-    await store.loadGame(gameId);
+    await store.joinGame(gameId);
 
     if (!store.game) {
       this.$router.push('/');

@@ -102,7 +102,6 @@ export default {
   },
   methods: {
     async createGame() {
-      console.log('Creating game...');
       const store = useStore();
       await store.createGame();
       this.$router.push(`/lobby/${store.game.id}`);
