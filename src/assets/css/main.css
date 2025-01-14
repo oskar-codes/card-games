@@ -18,9 +18,6 @@ html, body {
 /* Reset all ancestor elements of .screen.main */
 #app {
   height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 /* Ensure .screen.main takes full height and width of the screen */
