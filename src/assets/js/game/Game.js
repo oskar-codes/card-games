@@ -24,7 +24,7 @@ export class Game {
     this.id = id;
     this.players = players;
     this.currentPlayerIndex = 0;
-    this.currentCard = null; // should be null initially or a single card object
+    this.currentCards = []; // should be null initially or a single card object
     this.host = host;
     this.isGameLaunched = false;
 
@@ -41,7 +41,7 @@ export class Game {
       id: this.id,
       players: this.players.map(play => {return play.serialized()}),
       currentPlayerIndex: this.currentPlayerIndex,
-      currentCard: this.currentCard ? this.currentCard.serialized() : null,
+      currentCards: this.currentCards.map(card => card.serialized()),
       host: this.host ? this.host.serialized() : null,
       leaderboard: this.leaderboard,
       isGameLaunched: this.isGameLaunched,
@@ -57,7 +57,7 @@ export class Game {
   static hydrate(data) {
     const game = new Game(data.id, data.players.map(player => Player.hydrate(player)), data.host ? Player.hydrate(data.host) : null);
     game.currentPlayerIndex = data.currentPlayerIndex;
-    game.currentCard = data.currentCard ? Card.hydrate(data.currentCard) : null;
+    game.currentCards = data.currentCards ? data.currentCards.map(card => Card.hydrate(card)) : [];
     game.isGameLaunched = data.isGameLaunched !== undefined ? data.isGameLaunched : false;
     game.leaderboard = data.leaderboard || [];
 
@@ -66,23 +66,82 @@ export class Game {
 
 
   /**
-   * Play a card in the game.
-   * @param {Card} card - The card to play
+   * Play a set of cards in the game.
+   * @param {Card[]} cardSet - The set of cards to play
+   * @returns {Promise<void>}
    */
-  async playCard(card) {
-    const cardIndex = this.currentPlayer.hand.findIndex(c => c.rank === card.rank && c.suit === card.suit);
-    if (cardIndex === -1) {
+  async playCard(cardSet) {
+    if (!Array.isArray(cardSet) || cardSet.length === 0) {
+      alert("Invalid card set");
       return;
     }
 
-    this.currentPlayer.hand.splice(cardIndex, 1);
-    this.currentCard = card;
-    if (this.currentPlayer.hand.length === 0) {
+    // need to ensure all cards in the set are of the same rank
+    const firstCardRank = cardSet[0].rank;
+    const isValidSet = cardSet.every(card => card.rank === firstCardRank);
+
+    if (!isValidSet) {
+      alert("Invalid set: all cards must have the same rank");
+      return;
+    }
+
+    // check if player has these cards in their hand
+
+    const hand = this.currentPlayer.hand;
+    console.log("Current Player hand : ", hand);
+    console.log("CardSet to play : ", cardSet);
+    const isPlayable = cardSet.every(card =>
+        hand.some(h => h.rank === card.rank && h.suit === card.suit)
+    );
+
+    if (!isPlayable) {
+      alert("Player does not have the required cards");
+      return;
+    }
+
+    // check if the set can beat the current set of cards on the table
+    if (this.currentCards.length > 0) {
+      const currentSetRank = this.currentCards[0].rank;
+      const rankValue = (rank) => (rank === 2 ? Infinity : rank);
+
+      if (
+          cardSet.length !== this.currentCards.length ||
+          rankValue(firstCardRank) <= rankValue(currentSetRank)
+      ) {
+        alert("The card set cannot beat the current card set");
+        return;
+      }
+    }
+
+    // remove the cards from the player's hand
+    cardSet.forEach(card => {
+      const index = hand.findIndex(h => h.rank === card.rank && h.suit === card.suit);
+      if (index !== -1) {
+        hand.splice(index, 1);
+      }
+    });
+
+    this.currentCards = cardSet;
+
+    // if the player's hand is now empty, they finish the game
+    if (hand.length === 0) {
       await this.playerFinishGame();
     } else {
       await this.nextTurn();
     }
+
+    await this.updateGameOnFirestore();
   }
+
+  /**
+   * Skip the turn of the current player.
+   * @returns {Promise<void>}
+   */
+  async skipMyTurn() {
+    await this.nextTurn();
+    await this.updateGameOnFirestore();
+  }
+
 
   get currentPlayer() {
     return this.players[this.currentPlayerIndex];
@@ -130,7 +189,7 @@ export class Game {
       });
     }
     this.currentPlayerIndex = 0;
-    this.currentCard = null;
+    this.currentCards = [];
     this.leaderboard = [];
     this.isGameLaunched = true;
 

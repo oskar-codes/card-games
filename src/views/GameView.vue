@@ -13,21 +13,27 @@
     </div>
 
     <div>
-      <h2>Current Card</h2>
-      <p v-if="game.currentCard">
-        {{ game.currentCard.rank }} of {{ game.currentCard.suit }}
-      </p>
-      <p v-else>No card has been played yet.</p>
+      <h2>Current Cards</h2>
+      <div v-if="game.currentCards && game.currentCards.length > 0">
+        <p v-for="(card, index) in game.currentCards" :key="index">
+          {{ card.rank }} of {{ card.suit }}
+        </p>
+      </div>
+      <p v-else>No cards have been played yet.</p>
     </div>
 
     <div v-if="isCurrentPlayerTurn">
       <h2>Your Hand</h2>
       <ul>
         <li v-for="(card, index) in game.currentPlayer.hand" :key="index">
-          <span>{{ card.rank }} of {{ card.suit }}</span>
-          <button @click="playCard(card)">Play</button>
+          <label>
+            <input type="checkbox" v-model="selectedCards" :value="card" />
+            {{ card.rank }} of {{ card.suit }}
+          </label>
         </li>
       </ul>
+      <button @click="playCards" :disabled="selectedCards.length === 0">Play Selected Cards</button>
+      <button @click="skipTurn" class="skip-turn-btn">Skip Turn</button> <!-- Skip turn button -->
     </div>
 
     <div v-if="game.leaderboard.length > 0">
@@ -44,7 +50,7 @@
 <script>
 import { useStore } from '@/stores/store';
 import { useRoute, useRouter } from 'vue-router';
-import {toRefs} from "vue";
+import { ref, toRefs } from 'vue';
 
 export default {
   async setup() {
@@ -52,35 +58,52 @@ export default {
     const route = useRoute();
     const router = useRouter();
 
-    // Ensure game is joined and updated
     const gameId = route.params.id;
     await store.joinGame(gameId);
 
-    const {game} = toRefs(store);
-    const {player} = toRefs(store);
+    const { game } = toRefs(store);
+    const { player } = toRefs(store);
 
-    // Method to play a card
-    const playCard = async (card) => {
-      if (game.value && game.value.currentPlayer.id === player.value.id) {
-        await game.playCard(card); // Play the selected card
-        await store.updatePlayerName(player.value.name); // Update Firestore if necessary
+    const selectedCards = ref([]);
+
+    // Play selected cards
+    const playCards = async () => {
+      if (game.value && game.value.currentPlayer.id === player.value.id && selectedCards.value.length > 0) {
+        await game.value.playCard(selectedCards.value);
+        selectedCards.value = []; // Reset selected cards after play
       }
     };
 
-    // Check if it's the current player's turn
+    // Skip the current player's turn
+    const skipTurn = async () => {
+      if (game.value && game.value.currentPlayer.id === player.value.id) {
+        await game.value.skipMyTurn();
+      }
+    };
+
     const isCurrentPlayerTurn = game.value.currentPlayer.id === player.value.id;
 
     return {
       game,
       player,
-      playCard,
-      isCurrentPlayerTurn
+      selectedCards,
+      playCards,
+      isCurrentPlayerTurn,
+      skipTurn // Returning the skipTurn method
     };
   },
 };
 </script>
 
 <style scoped>
+/* Ensure the body or html allows scrolling */
+html, body {
+  height: 100%; /* Make sure the page is at least as tall as the viewport */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Remove any default padding */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
 /* Add some basic styling */
 h2 {
   color: #333;
@@ -98,6 +121,11 @@ button:hover {
   background-color: #0056b3;
 }
 
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
 ul {
   list-style-type: none;
   padding: 0;
@@ -105,5 +133,25 @@ ul {
 
 li {
   margin: 10px 0;
+}
+
+/* Styling for Skip Turn button */
+.skip-turn-btn {
+  background-color: #e74c3c;
+  margin-top: 10px;
+}
+
+.skip-turn-btn:hover {
+  background-color: #c0392b;
+}
+
+.skip-turn-btn:disabled {
+  background-color: #f2dede;
+}
+
+/* Allow scrolling on the game view container */
+div {
+  overflow-y: auto;
+  max-height: 100vh; /* Prevent exceeding viewport height */
 }
 </style>
