@@ -36,10 +36,10 @@ export class Game {
    * Serializes the game state.
    * @returns {Object} Serialized game data
    */
-  serialized() {
+   serialized() {
     return {
       id: this.id,
-      players: this.players.map(play => {play.serialized()}),
+      players: this.players.map(play => {return play.serialized()}),
       currentPlayerIndex: this.currentPlayerIndex,
       currentCard: this.currentCard ? this.currentCard.serialized() : null,
       host: this.host ? this.host.serialized() : null,
@@ -89,30 +89,6 @@ export class Game {
   }
 
   /**
-   * Deal shuffled cards to players and reset for a new round.
-   */
-  async startNewRound() {
-    const shuffledDeck = this.shuffleDeck(Card.DECK);
-    this.players.forEach((player) => {
-      player.hand = []; // reset player's hand
-    });
-
-    while (shuffledDeck.length) {
-      this.players.forEach((player) => {
-        if (shuffledDeck.length) {
-          player.hand.push(shuffledDeck.pop());
-        }
-      });
-    }
-    this.currentPlayerIndex = 0;
-    this.currentCard = null;
-    this.leaderboard = [];
-    this.isGameLaunched = true;
-
-    await this.updateGameOnFirestore();
-  }
-
-  /**
    * Shuffle the deck using Fisher-Yates (Durstenfeld) algorithm.
    * @param {Card[]} deck - The deck of cards
    * @returns {Card[]} The shuffled deck
@@ -132,13 +108,32 @@ export class Game {
 
   static async createGame(host) {
     const id = uuidv4();
-    const game = new Game(id, host ? [host] : [], this.$host);
+    if (!host){
+      alert("The game have no host...");
+    }
+    const game = new Game(id, [host], host);
     await setDoc(doc(db, 'games', id), game.serialized());
     return game;
   }
 
   async launchGame() {
+    const shuffledDeck = this.shuffleDeck(Card.DECK);
+    this.players.forEach((player) => {
+      player.hand = []; // reset player's hand
+    });
+
+    while (shuffledDeck.length) {
+      this.players.forEach((player) => {
+        if (shuffledDeck.length) {
+          player.hand.push(shuffledDeck.pop());
+        }
+      });
+    }
+    this.currentPlayerIndex = 0;
+    this.currentCard = null;
+    this.leaderboard = [];
     this.isGameLaunched = true;
+
     await this.updateGameOnFirestore();
   }
 

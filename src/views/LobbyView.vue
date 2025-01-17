@@ -17,7 +17,9 @@
       </span>
     </li>
   </ul>
-  <button class="play-button" @click="playGame">Play</button>
+  <span v-if="player.id === game.host.id">
+    <button class="play-button" @click="playGame">Play</button>
+  </span>
 </template>
 
 <script>
